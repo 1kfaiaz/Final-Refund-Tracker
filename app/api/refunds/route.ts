@@ -1,18 +1,26 @@
-export const dynamic = "force-dynamic";
+import { NextRequest, NextResponse } from "next/server"
+import { getSupabaseAdmin } from "@/app/lib/supabase"
 
-import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const { id } = params
+  const body = await request.json()
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+  const supabase = getSupabaseAdmin()
 
-export async function GET() {
-  const { data } = await supabase
+  const { error } = await supabase
     .from("refunds")
-    .select("*")
-    .order("created_at", { ascending: false });
+    .update({ status: body.status })
+    .eq("id", id)
 
-  return NextResponse.json(data ?? []);
+  if (error) {
+    return NextResponse.json(
+      { error: error.message },
+      { status: 500 }
+    )
+  }
+
+  return NextResponse.json({ success: true })
 }
