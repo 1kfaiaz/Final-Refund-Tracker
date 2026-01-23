@@ -1,34 +1,46 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { PLATFORMS, FAULT_SOURCES } from "@/app/lib/constants"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { PLATFORMS, FAULT_SOURCES } from "@/app/lib/constants";
 
 export default function NewRefundPage() {
-  const [loading, setLoading] = useState(false)
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    setLoading(true)
+    e.preventDefault();
+    setLoading(true);
 
-    const form = new FormData(e.currentTarget)
+    const form = new FormData(e.currentTarget);
 
-    await fetch("/api/refunds", {
+    const res = await fetch("/api/refunds", {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
         platform: form.get("platform"),
-        order_id: form.get("order_id") || null,
-        order_date_time: form.get("order_date_time"),
-        total_order_value: Number(form.get("total_order_value")),
-        refunded_amount: Number(form.get("refunded_amount")),
-        items_refunded: Number(form.get("items_refunded")),
-        refund_reason: form.get("refund_reason"),
-        fault_source: form.get("fault_source"),
-        manager_notes: form.get("manager_notes") || null,
+        totalOrderValue: Number(form.get("total_order_value")),
+        refundedAmount: Number(form.get("refunded_amount")),
+        itemsRefunded: Number(form.get("items_refunded")),
+        refundReason: form.get("refund_reason"),
+        faultSource: form.get("fault_source"),
+        managerNotes: form.get("manager_notes") || null,
+        photos: [], // optional, safe
       }),
-    })
+    });
 
-    setLoading(false)
-    e.currentTarget.reset()
+    setLoading(false);
+
+    if (!res.ok) {
+      alert("Refund failed to save. Check console.");
+      return;
+    }
+
+    e.currentTarget.reset();
+    router.refresh();
+    router.push("/refunds");
   }
 
   return (
@@ -47,53 +59,74 @@ export default function NewRefundPage() {
           <label className="label">Platform</label>
           <select name="platform" required className="input">
             <option value="">Select platform</option>
-            {PLATFORMS.map(p => (
-              <option key={p} value={p}>{p}</option>
+            {PLATFORMS.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
             ))}
           </select>
         </div>
 
-        {/* Date */}
+        {/* Date (UI only, backend sets actual time) */}
         <div>
           <label className="label">
             Order Date & Time <span className="text-purple-400">(click field)</span>
           </label>
           <input
             type="datetime-local"
-            name="order_date_time"
-            required
             className="input cursor-pointer"
           />
         </div>
 
-        {/* Order ID */}
+        {/* Order ID (not required by backend, UI only for now) */}
         <div>
           <label className="label">Order ID (optional)</label>
-          <input name="order_id" className="input" placeholder="Uber / Just Eat Order ID" />
+          <input className="input" placeholder="Uber / Just Eat Order ID" />
         </div>
 
         {/* Total */}
         <div>
           <label className="label">Total Order Value (£)</label>
-          <input name="total_order_value" type="number" step="0.01" required className="input" />
+          <input
+            name="total_order_value"
+            type="number"
+            step="0.01"
+            required
+            className="input"
+          />
         </div>
 
         {/* Refunded */}
         <div>
           <label className="label">Refunded Amount (£)</label>
-          <input name="refunded_amount" type="number" step="0.01" required className="input" />
+          <input
+            name="refunded_amount"
+            type="number"
+            step="0.01"
+            required
+            className="input"
+          />
         </div>
 
         {/* Items */}
         <div>
           <label className="label">Items Refunded</label>
-          <input name="items_refunded" type="number" required className="input" />
+          <input
+            name="items_refunded"
+            type="number"
+            required
+            className="input"
+          />
         </div>
 
         {/* Reason */}
         <div>
           <label className="label">Refund Reason</label>
-          <input name="refund_reason" required className="input" />
+          <input
+            name="refund_reason"
+            required
+            className="input"
+          />
         </div>
 
         {/* Fault */}
@@ -101,8 +134,10 @@ export default function NewRefundPage() {
           <label className="label">Fault Source</label>
           <select name="fault_source" required className="input">
             <option value="">Select</option>
-            {FAULT_SOURCES.map(f => (
-              <option key={f} value={f}>{f}</option>
+            {FAULT_SOURCES.map((f) => (
+              <option key={f} value={f}>
+                {f}
+              </option>
             ))}
           </select>
         </div>
@@ -110,7 +145,11 @@ export default function NewRefundPage() {
         {/* Notes */}
         <div className="md:col-span-2">
           <label className="label">Manager Notes</label>
-          <textarea name="manager_notes" rows={3} className="input" />
+          <textarea
+            name="manager_notes"
+            rows={3}
+            className="input"
+          />
         </div>
 
         <div className="md:col-span-2 flex justify-end">
@@ -123,5 +162,5 @@ export default function NewRefundPage() {
         </div>
       </form>
     </div>
-  )
+  );
 }
