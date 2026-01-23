@@ -1,26 +1,33 @@
-import { NextRequest, NextResponse } from "next/server"
-import { getSupabaseAdmin } from "@/app/lib/supabase"
+import { NextResponse, NextRequest } from "next/server";
+import { getSupabase } from "@/app/lib/supabase";
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = params
-  const body = await request.json()
+  try {
+    const { id } = await context.params;
+    const body = await request.json();
 
-  const supabase = getSupabaseAdmin()
+    const supabase = getSupabase();
 
-  const { error } = await supabase
-    .from("refunds")
-    .update({ status: body.status })
-    .eq("id", id)
+    const { error } = await supabase
+      .from("refunds")
+      .update({ status: body.status })
+      .eq("id", id);
 
-  if (error) {
+    if (error) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ success: true });
+  } catch {
     return NextResponse.json(
-      { error: error.message },
-      { status: 500 }
-    )
+      { error: "Invalid request" },
+      { status: 400 }
+    );
   }
-
-  return NextResponse.json({ success: true })
 }
